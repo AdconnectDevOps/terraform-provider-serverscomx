@@ -7,18 +7,18 @@ help: ## Show this help message
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-15s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 build: ## Build the Terraform provider binary
-	export GOROOT=/opt/homebrew/opt/go/libexec && GOOS=darwin GOARCH=arm64 go build -o terraform-provider-serverscom-extras
+	export GOROOT=/opt/homebrew/opt/go/libexec && GOOS=darwin GOARCH=arm64 go build -o terraform-provider-serverscomx
 
 clean: ## Clean build artifacts
-	rm -f terraform-provider-serverscom-extras
+	rm -f terraform-provider-serverscomx
 	go clean -cache
 
 test: ## Run tests
 	export GOROOT=/opt/homebrew/opt/go/libexec && go test -v ./...
 
 install: build ## Build and install the provider locally
-	mkdir -p ~/.terraform.d/plugins/registry.terraform.io/adconnectdevops/serverscom-extras/0.1.0/darwin_arm64/
-	cp terraform-provider-serverscom-extras ~/.terraform.d/plugins/registry.terraform.io/adconnectdevops/serverscom-extras/0.1.0/darwin_arm64/
+	mkdir -p ~/.terraform.d/plugins/registry.terraform.io/adconnectdevops/serverscomx/0.1.0/darwin_arm64/
+	cp terraform-provider-serverscomx ~/.terraform.d/plugins/registry.terraform.io/adconnectdevops/serverscomx/0.1.0/darwin_arm64/
 
 fmt: ## Format Go code (matches CI: gofmt -s for simplifications)
 	export GOROOT=/opt/homebrew/opt/go/libexec && gofmt -s -w .

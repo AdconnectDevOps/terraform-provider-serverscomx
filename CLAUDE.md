@@ -26,7 +26,7 @@ When writing this rule list itself, do not use a real-world value as the example
 
 ## What this is
 
-A Terraform provider that wraps Servers.com Public API endpoints missing from the official `serverscom/serverscom` provider. Built on `terraform-plugin-framework` v1.x. Published to the Terraform Registry as `AdconnectDevOps/serverscom-extras`.
+A Terraform provider that wraps Servers.com Public API endpoints missing from the official `serverscom/serverscom` provider. Built on `terraform-plugin-framework` v1.x. Published to the Terraform Registry as `AdconnectDevOps/serverscomx`.
 
 Current surface: PTR records on dedicated servers. Other gap-fills (alias-IP add/remove if API exposes it, cloud-instance PTR, l2 advanced) belong here as separate resources, not as separate repos.
 
@@ -35,11 +35,11 @@ Current surface: PTR records on dedicated servers. Other gap-fills (alias-IP add
 ```
 .
 ├── main.go                                # provider entrypoint
-├── provider.go                            # ServersComExtrasProvider — schema, Configure, resource list
-├── serverscom/                            # provider package
+├── provider.go                            # ServersComXProvider — schema, Configure, resource list
+├── serverscomx/                           # provider package
 │   ├── client.go                          # REST client + PtrRecord/PtrCreateRequest types
 │   ├── rate_limiter.go                    # mutex-based request spacer + 429 retry
-│   └── resource_ptr_record.go             # serverscom_ptr_record resource
+│   └── resource_ptr_record.go             # serverscomx_ptr_record resource
 ├── docs/                                  # registry-published docs
 ├── examples/                              # runnable HCL examples
 ├── .goreleaser.yml                        # release build matrix
@@ -64,7 +64,7 @@ make dev        # run with -debug for TF_REATTACH_PROVIDERS attach
 4. GH Action runs goreleaser (linux/darwin × amd64/arm64), GPG-signs the checksum file, creates GitHub release.
 5. Registry picks up within ~10-15 min:
    ```bash
-   curl -s https://registry.terraform.io/v1/providers/AdconnectDevOps/serverscom-extras/versions \
+   curl -s https://registry.terraform.io/v1/providers/AdconnectDevOps/serverscomx/versions \
      | python3 -c "import json,sys; print(sorted([v['version'] for v in json.load(sys.stdin)['versions']], key=lambda x:[int(p) for p in x.split('.')])[-3:])"
    ```
 
@@ -75,13 +75,13 @@ Required GitHub secrets: `GPG_PRIVATE_KEY` (ASCII-armored signing key). `GITHUB_
 Inherits from `terraform-provider-shodan`'s contributor guide. Key rules:
 
 - **Computed `id` uses `UseStateForUnknown`** — without it, Terraform marks the value as `<known after apply>` on every plan and Update paths that don't reassign `plan.ID = state.ID` write empty to state, then Read 404s on the empty URL.
-- **Update must carry forward state ID** — even with `UseStateForUnknown`, defensively assign `plan.ID = state.ID` before any API mutation in Update. (For `serverscom_ptr_record`, Update is a no-op — every attr is `RequiresReplace`.)
+- **Update must carry forward state ID** — even with `UseStateForUnknown`, defensively assign `plan.ID = state.ID` before any API mutation in Update. (For `serverscomx_ptr_record`, Update is a no-op — every attr is `RequiresReplace`.)
 - **Read self-heals on 404** — `resp.State.RemoveResource(ctx)` and return; Terraform recreates on next plan.
 - **Client method conventions** — empty-ID guard, rate-limited HTTP client (never `http.DefaultClient`), idempotent DELETE (treat 404 as success), wrap non-2xx as `fmt.Errorf("API request failed with status %d: %s", code, body)` so callers can string-match `status 404`.
 
 ## Adding a new resource
 
-1. Create `serverscom/resource_<thing>.go` modelled on `resource_ptr_record.go`.
+1. Create `serverscomx/resource_<thing>.go` modelled on `resource_ptr_record.go`.
 2. Add `NewXResource` to the slice returned by `Resources()` in `provider.go`.
 3. Add user docs at `docs/resources/<thing>.md`.
 4. Add a runnable example at `examples/resources/serverscom_<thing>/resource.tf`.

@@ -1,10 +1,10 @@
 ---
-page_title: "serverscom_ptr_record Resource"
+page_title: "serverscomx_ptr_record Resource"
 description: |-
   Manages a PTR (reverse DNS) record on a Servers.com dedicated server.
 ---
 
-# serverscom_ptr_record
+# serverscomx_ptr_record
 
 Manages a PTR (reverse DNS) record on a Servers.com dedicated server.
 
@@ -13,7 +13,7 @@ PTR records are created via `POST /hosts/dedicated_servers/{host_id}/ptr_records
 ## Example Usage
 
 ```terraform
-resource "serverscom_ptr_record" "rev" {
+resource "serverscomx_ptr_record" "rev" {
   host_id = "aBcDeFgH"
   ip      = "203.0.113.10"
   domain  = "mta1.example.com"
@@ -23,7 +23,7 @@ resource "serverscom_ptr_record" "rev" {
 With explicit priority and TTL:
 
 ```terraform
-resource "serverscom_ptr_record" "rev" {
+resource "serverscomx_ptr_record" "rev" {
   host_id  = "aBcDeFgH"
   ip       = "203.0.113.10"
   domain   = "mta1.example.com"
@@ -54,7 +54,7 @@ resource "serverscom_ptr_record" "rev" {
 The import ID is composite — `host_id:ptr_id` — because the Servers.com API has no global PTR namespace.
 
 ```bash
-terraform import 'serverscom_ptr_record.rev' 'aBcDeFgH:recordId123'
+terraform import 'serverscomx_ptr_record.rev' 'aBcDeFgH:recordId123'
 ```
 
 Find existing PTR IDs for a host via:

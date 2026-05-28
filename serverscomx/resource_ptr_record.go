@@ -1,4 +1,4 @@
-package serverscom
+package serverscomx
 
 import (
 	"context"
@@ -104,7 +104,7 @@ func (r *PtrRecordResource) Configure(_ context.Context, req resource.ConfigureR
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Provider Data Type",
-			fmt.Sprintf("Expected *serverscom.Client, got: %T", req.ProviderData),
+			fmt.Sprintf("Expected *serverscomx.Client, got: %T", req.ProviderData),
 		)
 		return
 	}

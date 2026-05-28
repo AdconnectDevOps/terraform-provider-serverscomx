@@ -1,12 +1,12 @@
 terraform {
   required_providers {
     serverscom = {
-      source  = "AdconnectDevOps/serverscom-extras"
+      source  = "AdconnectDevOps/serverscomx"
       version = "~> 0"
     }
   }
 }
 
-provider "serverscom" {
+provider "serverscomx" {
   # token is read from SERVERSCOM_TOKEN env var when omitted.
 }

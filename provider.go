@@ -4,7 +4,7 @@ import (
 	"context"
 	"os"
 
-	"github.com/AdconnectDevOps/terraform-provider-serverscom-extras/serverscom"
+	"github.com/AdconnectDevOps/terraform-provider-serverscomx/serverscomx"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
@@ -13,25 +13,25 @@ import (
 )
 
 var (
-	_ provider.Provider = &ServersComExtrasProvider{}
+	_ provider.Provider = &ServersComXProvider{}
 )
 
-type ServersComExtrasProvider struct {
+type ServersComXProvider struct {
 	version string
 }
 
-type ServersComExtrasProviderModel struct {
+type ServersComXProviderModel struct {
 	Token           types.String `tfsdk:"token"`
 	Endpoint        types.String `tfsdk:"endpoint"`
 	RequestInterval types.Int64  `tfsdk:"request_interval"`
 }
 
-func (p *ServersComExtrasProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
-	resp.TypeName = "serverscom"
+func (p *ServersComXProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
+	resp.TypeName = "serverscomx"
 	resp.Version = p.version
 }
 
-func (p *ServersComExtrasProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
+func (p *ServersComXProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Gap-fill Terraform provider for Servers.com Public API endpoints missing from the official serverscom/serverscom provider. Currently exposes PTR record management on dedicated servers; resource set will grow as other gaps are identified.",
 		Attributes: map[string]schema.Attribute{
@@ -52,8 +52,8 @@ func (p *ServersComExtrasProvider) Schema(ctx context.Context, req provider.Sche
 	}
 }
 
-func (p *ServersComExtrasProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
-	var config ServersComExtrasProviderModel
+func (p *ServersComXProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
+	var config ServersComXProviderModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
@@ -85,24 +85,24 @@ func (p *ServersComExtrasProvider) Configure(ctx context.Context, req provider.C
 		}
 	}
 
-	client := serverscom.NewClient(token, endpoint, requestInterval)
+	client := serverscomx.NewClient(token, endpoint, requestInterval)
 
 	resp.DataSourceData = client
 	resp.ResourceData = client
 }
 
-func (p *ServersComExtrasProvider) Resources(_ context.Context) []func() resource.Resource {
+func (p *ServersComXProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
-		serverscom.NewPtrRecordResource,
+		serverscomx.NewPtrRecordResource,
 	}
 }
 
-func (p *ServersComExtrasProvider) DataSources(_ context.Context) []func() datasource.DataSource {
+func (p *ServersComXProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{}
 }
 
 func New(version string) func() provider.Provider {
 	return func() provider.Provider {
-		return &ServersComExtrasProvider{version: version}
+		return &ServersComXProvider{version: version}
 	}
 }

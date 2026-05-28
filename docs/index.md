@@ -14,7 +14,7 @@ The official provider, at v0.2.2, manages only `cloud_computing_instance`, `dedi
 
 | Resource | Endpoint |
 |---|---|
-| `serverscom_ptr_record` | `/hosts/dedicated_servers/{host_id}/ptr_records` |
+| `serverscomx_ptr_record` | `/hosts/dedicated_servers/{host_id}/ptr_records` |
 
 ## Authentication
 
@@ -32,23 +32,23 @@ terraform {
       version = "~> 0.2"
     }
     serverscom_extras = {
-      source  = "AdconnectDevOps/serverscom-extras"
+      source  = "AdconnectDevOps/serverscomx"
       version = "~> 0"
     }
   }
 }
 ```
 
-When using only this provider, the local name can stay `serverscom` and the resource name is `serverscom_ptr_record` (no `_extras` infix).
+When using only this provider, the local name can stay `serverscom` and the resource name is `serverscomx_ptr_record` (no `_extras` infix).
 
 ## Example Usage
 
 ```terraform
-provider "serverscom" {
+provider "serverscomx" {
   # token is required. Falls back to SERVERSCOM_TOKEN env var when omitted.
 }
 
-resource "serverscom_ptr_record" "rev" {
+resource "serverscomx_ptr_record" "rev" {
   host_id = "aBcDeFgH"
   ip      = "203.0.113.10"
   domain  = "mta1.example.com"

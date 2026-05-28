@@ -1,8 +1,8 @@
-# terraform-provider-serverscom-extras
+# terraform-provider-serverscomx
 
 Gap-fill Terraform provider for Servers.com Public API endpoints missing from the official [`serverscom/serverscom`](https://registry.terraform.io/providers/serverscom/serverscom/latest) provider.
 
-Published to the Terraform Registry as **[`AdconnectDevOps/serverscom-extras`](https://registry.terraform.io/providers/AdconnectDevOps/serverscom-extras/latest)**.
+Published to the Terraform Registry as **[`AdconnectDevOps/serverscomx`](https://registry.terraform.io/providers/AdconnectDevOps/serverscomx/latest)**.
 
 ## Why this exists
 
@@ -12,7 +12,7 @@ The official provider (`serverscom/serverscom`, v0.2.2 at the time of writing) w
 
 | Resource | Purpose |
 |---|---|
-| `serverscom_ptr_record` | Reverse DNS (PTR) record on a dedicated server. Wraps `POST/DELETE /hosts/dedicated_servers/{host_id}/ptr_records[/{id}]`. |
+| `serverscomx_ptr_record` | Reverse DNS (PTR) record on a dedicated server. Wraps `POST/DELETE /hosts/dedicated_servers/{host_id}/ptr_records[/{id}]`. |
 
 ## Using both providers in one root
 
@@ -26,7 +26,7 @@ terraform {
       version = "~> 0.2"
     }
     serverscom_extras = {
-      source  = "AdconnectDevOps/serverscom-extras"
+      source  = "AdconnectDevOps/serverscomx"
       version = "~> 0"
     }
   }
@@ -41,12 +41,12 @@ resource "serverscom_extras_ptr_record" "rev" {       # this provider
 }
 ```
 
-When using only this provider, the resource name stays `serverscom_ptr_record` (no `_extras` prefix).
+When using only this provider, the resource name stays `serverscomx_ptr_record` (no `_extras` prefix).
 
 ## Configuration
 
 ```hcl
-provider "serverscom" {
+provider "serverscomx" {
   # token is required. Falls back to SERVERSCOM_TOKEN env var when omitted.
   # token = "your-api-token"
 
@@ -60,7 +60,7 @@ API tokens are issued in the [Servers.com Customer Portal](https://portal.server
 ## Example
 
 ```hcl
-resource "serverscom_ptr_record" "mta1_example" {
+resource "serverscomx_ptr_record" "mta1_example" {
   host_id = "aBcDeFgH" # GET /hosts/dedicated_servers?search_pattern=<host>
   ip      = "203.0.113.10"
   domain  = "mta1.example.com"
@@ -74,7 +74,7 @@ resource "serverscom_ptr_record" "mta1_example" {
 The import ID is composite — `host_id:ptr_id` — because the API has no global PTR namespace.
 
 ```bash
-terraform import 'serverscom_ptr_record.rev' 'aBcDeFgH:recordId123'
+terraform import 'serverscomx_ptr_record.rev' 'aBcDeFgH:recordId123'
 ```
 
 ## Development

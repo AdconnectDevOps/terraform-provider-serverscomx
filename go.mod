@@ -1,4 +1,4 @@
-module github.com/AdconnectDevOps/terraform-provider-serverscom-extras
+module github.com/AdconnectDevOps/terraform-provider-serverscomx
 
 go 1.25.0
 

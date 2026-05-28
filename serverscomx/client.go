@@ -1,4 +1,4 @@
-package serverscom
+package serverscomx
 
 import (
 	"bytes"

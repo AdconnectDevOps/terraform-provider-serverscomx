@@ -22,7 +22,7 @@ func main() {
 	flag.Parse()
 
 	opts := providerserver.ServeOpts{
-		Address: "registry.terraform.io/AdconnectDevOps/serverscom-extras",
+		Address: "registry.terraform.io/AdconnectDevOps/serverscomx",
 		Debug:   debug,
 	}
 
