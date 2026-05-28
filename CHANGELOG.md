@@ -1,6 +1,12 @@
 # Changelog
 
-## Unreleased
+## v0.1.1 — 2026-05-28
+
+### Changed
+
+- Republish to refresh Terraform Registry checksums after a same-version re-tag of `v0.1.0`. No code or doc behaviour changes — `v0.1.0` and `v0.1.1` are functionally identical; prefer `v0.1.1` for fresh installs.
+
+## v0.1.0 — 2026-05-28
 
 ### Added
 
