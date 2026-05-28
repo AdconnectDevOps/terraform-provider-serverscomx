@@ -1,0 +1,34 @@
+# Binaries
+terraform-provider-serverscom-extras
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Go coverage
+*.out
+coverage.txt
+
+# Go workspace file
+go.work
+go.work.sum
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+
+# OS junk
+.DS_Store
+
+# Local terraform plugin install target
+~/.terraform.d/
+
+# goreleaser
+dist/
+
+# GPG / signing artefacts
+*.sig
