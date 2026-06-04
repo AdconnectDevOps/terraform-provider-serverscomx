@@ -95,12 +95,15 @@ Inherits from `terraform-provider-shodan`'s contributor guide. Key rules:
 | `/hosts/dedicated_servers/{id}/ptr_records` | OPTIONS, GET, POST, HEAD | Collection — create + paginated list. |
 | `/hosts/dedicated_servers/{id}/ptr_records/{id}` | OPTIONS, DELETE | No PUT/PATCH — PTR records are immutable post-create. |
 
+The missing write methods are an **account/endpoint-level** limitation, **not a token-scope one** — all our serverscom API tokens are Read & Write. `POST /hosts/dedicated_servers/{id}/networks` returns `404 NOT_FOUND` (not 403/405) even with a RW token: Servers.com signals an unexposed write route with a 404 on a path whose `GET` works. Don't re-test by minting another write token. Support may claim allocation works via public API (docs list `CreateAPublicIpv4Network…`) — it does not for our account; IP ordering stays portal/serverscom-side.
+
 The "no PUT" finding drives `RequiresReplace` on every PTR schema attribute. If Servers.com later adds PATCH/PUT, drop `RequiresReplace` on `domain`/`priority`/`ttl` and add proper Update logic — `host_id` and `ip` stay ForceNew (PTR identity).
 
 ## Auth + rate limits
 
 - Token via `Authorization: Bearer <token>` header. Env fallback: `SERVERSCOM_TOKEN`.
 - API rate limit advertised as 2000 req/min per token (`x-ratelimit-limit: 2000`). The 1-second floor in `rate_limiter.go` is conservative; bump if mass-import needs more throughput.
+- `per_page` max is 100 (`>100 → 400 BAD_REQUEST {params:["per_page"]}`, an error *object* — `jq length` on it misleads); large network lists paginate.
 
 ## Style
 
