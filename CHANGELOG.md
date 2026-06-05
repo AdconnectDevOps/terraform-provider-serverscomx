@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.1 — 2026-06-05
+
+### Fixed
+
+- `serverscomx_public_ipv4`: derive `mask` from the allocated CIDR on read/import. Without it an imported resource had a null `mask` that diffed against the default `32` and — `mask` being `RequiresReplace` — proposed a destroy+recreate (i.e. a *new* IP) on the first plan after import. Importing existing alias IPs is now safe; `terraform plan` reports no changes.
+
 ## v0.2.0 — 2026-06-05
 
 ### Added

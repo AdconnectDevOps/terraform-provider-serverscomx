@@ -3,6 +3,7 @@ package serverscomx
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -219,11 +220,17 @@ func (r *PublicIPv4Resource) ImportState(ctx context.Context, req resource.Impor
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), parts[1])...)
 }
 
-// apply copies API-returned network fields into the model.
+// apply copies API-returned network fields into the model. Mask is derived from
+// the CIDR prefix — the API has no mask field, and without setting it here an
+// imported resource would have a null mask, diffing against the default 32 and
+// (because mask is RequiresReplace) proposing a destroy+recreate on first plan.
 func (r *PublicIPv4Resource) apply(m *PublicIPv4ResourceModel, net *Network) {
 	m.ID = types.StringValue(net.ID)
 	m.CIDR = types.StringValue(net.CIDR)
 	m.IPAddress = types.StringValue(addressOf(net.CIDR))
+	if mask, ok := maskOf(net.CIDR); ok {
+		m.Mask = types.Int64Value(mask)
+	}
 	if net.DistributionMethod != "" {
 		m.DistributionMethod = types.StringValue(net.DistributionMethod)
 	}
@@ -235,4 +242,17 @@ func addressOf(cidr string) string {
 		return cidr[:i]
 	}
 	return cidr
+}
+
+// maskOf extracts the prefix length from a CIDR ("203.0.113.10/32" -> 32).
+func maskOf(cidr string) (int64, bool) {
+	i := strings.IndexByte(cidr, '/')
+	if i < 0 || i+1 >= len(cidr) {
+		return 0, false
+	}
+	n, err := strconv.ParseInt(cidr[i+1:], 10, 64)
+	if err != nil {
+		return 0, false
+	}
+	return n, true
 }

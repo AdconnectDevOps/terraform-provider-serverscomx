@@ -12,6 +12,8 @@ Allocation uses `POST /hosts/dedicated_servers/{host_id}/networks/public_ipv4` a
 
 Allocation is **asynchronous**: the API returns `202` with a null CIDR, then assigns the address within ~1s. The resource polls until the network reports `status: active` and returns the assigned CIDR.
 
+Deallocation is asynchronous too: `terraform destroy` returns once the `DELETE` is accepted (`202`), but the address may take ~30s to actually free — a `GET` on the network can keep reporting `status: active` during that window before the record disappears (`404`). Verify a freed address by the `404`, not by polling `status`.
+
 ## Example Usage
 
 ```terraform
