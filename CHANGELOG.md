@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.2.0 — 2026-06-05
+
+### Added
+
+- `serverscomx_public_ipv4` resource — allocate / read / delete / import an additional public IPv4 (alias) address on a dedicated server. Wraps `POST /hosts/dedicated_servers/{host_id}/networks/public_ipv4` and `DELETE .../networks/{id}`.
+- Exposes `cidr` and `ip_address` (bare address) computed attributes — `ip_address` feeds directly into `serverscomx_ptr_record.ip` for allocate-and-reverse-DNS in one apply.
+- ImportState supports composite ID `host_id:network_id`.
+
+### Notes
+
+- Allocation is asynchronous: the API returns `202` with a null CIDR, then assigns the address within ~1s. Create polls the network id until `status: active` (rate-limited GETs space the poll ~`request_interval` apart, max 60 attempts).
+- Allocation lives on the `/networks/public_ipv4` sub-resource — the bare `/networks` collection is read-only (POST there `404`s). `OPTIONS` under-reports allowed methods on nested `/networks/...` paths (reports `OPTIONS, POST` while GET/DELETE work); behaviour was verified with live calls.
+- No `PUT`/`PATCH` — `host_id`, `mask`, `distribution_method` are all `RequiresReplace`.
+
 ## v0.1.0 — 2026-05-28
 
 ### Added

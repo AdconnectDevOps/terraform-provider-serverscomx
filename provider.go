@@ -33,7 +33,7 @@ func (p *ServersComXProvider) Metadata(ctx context.Context, req provider.Metadat
 
 func (p *ServersComXProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Gap-fill Terraform provider for Servers.com Public API endpoints missing from the official serverscom/serverscom provider. Currently exposes PTR record management on dedicated servers; resource set will grow as other gaps are identified.",
+		Description: "Gap-fill Terraform provider for Servers.com Public API endpoints missing from the official serverscom/serverscom provider. Exposes PTR record management and public IPv4 (alias) allocation on dedicated servers; resource set will grow as other gaps are identified.",
 		Attributes: map[string]schema.Attribute{
 			"token": schema.StringAttribute{
 				Description: "Servers.com API token. Falls back to SERVERSCOM_TOKEN environment variable when not set.",
@@ -94,6 +94,7 @@ func (p *ServersComXProvider) Configure(ctx context.Context, req provider.Config
 func (p *ServersComXProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		serverscomx.NewPtrRecordResource,
+		serverscomx.NewPublicIPv4Resource,
 	}
 }
 

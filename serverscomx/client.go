@@ -187,3 +187,157 @@ func (c *Client) DeletePtrRecord(hostID, ptrID string) error {
 	body, _ := io.ReadAll(resp.Body)
 	return fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(body))
 }
+
+// Network mirrors a dedicated-server network record from
+// /hosts/dedicated_servers/{host_id}/networks[/{id}]. CIDR is null/empty until
+// an asynchronous allocation finishes (status transitions new -> active).
+type Network struct {
+	ID                 string `json:"id"`
+	Title              string `json:"title"`
+	CIDR               string `json:"cidr"`
+	Family             string `json:"family"`
+	InterfaceType      string `json:"interface_type"`
+	DistributionMethod string `json:"distribution_method"`
+	Additional         bool   `json:"additional"`
+	Status             string `json:"status"`
+}
+
+// PublicIPv4CreateRequest is the payload for POST .../networks/public_ipv4 —
+// allocate an additional public IPv4 (alias) address on a dedicated server.
+type PublicIPv4CreateRequest struct {
+	DistributionMethod string `json:"distribution_method"`
+	Mask               int64  `json:"mask"`
+}
+
+// CreatePublicIPv4 allocates an additional public IPv4 alias network on a host.
+// The API answers 202 with status "new" and a null CIDR — the address is
+// assigned asynchronously; poll WaitForNetworkActive for the final CIDR.
+// NOTE: this is the /networks/public_ipv4 sub-resource. The bare /networks
+// collection is read-only (POST there 404s).
+func (c *Client) CreatePublicIPv4(hostID string, in PublicIPv4CreateRequest) (*Network, error) {
+	if hostID == "" {
+		return nil, fmt.Errorf("host ID cannot be empty")
+	}
+
+	req, err := c.newRequest("POST", fmt.Sprintf("/hosts/dedicated_servers/%s/networks/public_ipv4", hostID), in)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	// Allocation is accepted asynchronously (202); also tolerate 200/201.
+	if resp.StatusCode != http.StatusAccepted && resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var out Network
+	if err := json.Unmarshal(body, &out); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+	return &out, nil
+}
+
+// GetNetwork fetches a single network by host + id. Unlike PTR records, the
+// API exposes a direct GET on .../networks/{id} (verified live — OPTIONS
+// under-reports it). 404 is surfaced as `status 404` for callers to match on.
+func (c *Client) GetNetwork(hostID, netID string) (*Network, error) {
+	if hostID == "" {
+		return nil, fmt.Errorf("host ID cannot be empty")
+	}
+	if netID == "" {
+		return nil, fmt.Errorf("network ID cannot be empty")
+	}
+
+	req, err := c.newRequest("GET", fmt.Sprintf("/hosts/dedicated_servers/%s/networks/%s", hostID, netID), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, fmt.Errorf("API request failed with status 404: network %s not found on host %s", netID, hostID)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var out Network
+	if err := json.Unmarshal(body, &out); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+	return &out, nil
+}
+
+// WaitForNetworkActive polls GetNetwork until the allocation reaches status
+// "active" with a non-empty CIDR. The rate-limited client spaces polls at least
+// request_interval seconds apart, so maxAttempts roughly bounds the wait time.
+func (c *Client) WaitForNetworkActive(hostID, netID string, maxAttempts int) (*Network, error) {
+	var last *Network
+	for attempt := 0; attempt < maxAttempts; attempt++ {
+		net, err := c.GetNetwork(hostID, netID)
+		if err != nil {
+			return nil, err
+		}
+		last = net
+		switch net.Status {
+		case "active":
+			if net.CIDR != "" {
+				return net, nil
+			}
+		case "removed", "removing", "failed":
+			return nil, fmt.Errorf("network %s entered terminal status %q during allocation", netID, net.Status)
+		}
+	}
+	status := "unknown"
+	if last != nil {
+		status = last.Status
+	}
+	return nil, fmt.Errorf("network %s did not become active within %d attempts (last status %q)", netID, maxAttempts, status)
+}
+
+// DeleteNetwork deallocates a network (alias IP) by id. 404 is treated as
+// success (idempotent). DELETE is accepted asynchronously (202).
+func (c *Client) DeleteNetwork(hostID, netID string) error {
+	if hostID == "" {
+		return fmt.Errorf("host ID cannot be empty")
+	}
+	if netID == "" {
+		return fmt.Errorf("network ID cannot be empty")
+	}
+
+	req, err := c.newRequest("DELETE", fmt.Sprintf("/hosts/dedicated_servers/%s/networks/%s", hostID, netID), nil)
+	if err != nil {
+		return err
+	}
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusAccepted || resp.StatusCode == http.StatusNoContent || resp.StatusCode == http.StatusNotFound {
+		return nil
+	}
+	body, _ := io.ReadAll(resp.Body)
+	return fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(body))
+}

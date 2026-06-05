@@ -28,7 +28,7 @@ When writing this rule list itself, do not use a real-world value as the example
 
 A Terraform provider that wraps Servers.com Public API endpoints missing from the official `serverscom/serverscom` provider. Built on `terraform-plugin-framework` v1.x. Published to the Terraform Registry as `AdconnectDevOps/serverscomx`.
 
-Current surface: PTR records on dedicated servers. Other gap-fills (alias-IP add/remove if API exposes it, cloud-instance PTR, l2 advanced) belong here as separate resources, not as separate repos.
+Current surface: PTR records and public IPv4 (alias) allocation on dedicated servers. Other gap-fills (cloud-instance PTR, l2 advanced) belong here as separate resources, not as separate repos.
 
 ## Layout
 
@@ -37,9 +37,10 @@ Current surface: PTR records on dedicated servers. Other gap-fills (alias-IP add
 ├── main.go                                # provider entrypoint
 ├── provider.go                            # ServersComXProvider — schema, Configure, resource list
 ├── serverscomx/                           # provider package
-│   ├── client.go                          # REST client + PtrRecord/PtrCreateRequest types
+│   ├── client.go                          # REST client + PtrRecord/Network types
 │   ├── rate_limiter.go                    # mutex-based request spacer + 429 retry
-│   └── resource_ptr_record.go             # serverscomx_ptr_record resource
+│   ├── resource_ptr_record.go             # serverscomx_ptr_record resource
+│   └── resource_public_ipv4.go            # serverscomx_public_ipv4 resource (alias IP)
 ├── docs/                                  # registry-published docs
 ├── examples/                              # runnable HCL examples
 ├── .goreleaser.yml                        # release build matrix
@@ -91,11 +92,15 @@ Inherits from `terraform-provider-shodan`'s contributor guide. Key rules:
 
 | Endpoint | Allowed methods | Notes |
 |---|---|---|
-| `/hosts/dedicated_servers/{id}/networks` | OPTIONS, GET, HEAD | Alias-IP ordering is portal-only, not via API. |
+| `/hosts/dedicated_servers/{id}/networks` | OPTIONS, GET, HEAD | Read-only list of attached networks. |
+| `/hosts/dedicated_servers/{id}/networks/public_ipv4` | OPTIONS, POST | **Allocate** an alias IP — body `{"distribution_method":"route","mask":32}` → `202`, then poll the network id until `status: active` for the assigned `cidr`. |
+| `/hosts/dedicated_servers/{id}/networks/{netId}` | GET, DELETE (OPTIONS misreports as `OPTIONS, POST`) | Get one network / **deallocate** alias (`DELETE` → `202`, `status: removed`). |
 | `/hosts/dedicated_servers/{id}/ptr_records` | OPTIONS, GET, POST, HEAD | Collection — create + paginated list. |
 | `/hosts/dedicated_servers/{id}/ptr_records/{id}` | OPTIONS, DELETE | No PUT/PATCH — PTR records are immutable post-create. |
 
-The missing write methods are an **account/endpoint-level** limitation, **not a token-scope one** — all our serverscom API tokens are Read & Write. `POST /hosts/dedicated_servers/{id}/networks` returns `404 NOT_FOUND` (not 403/405) even with a RW token: Servers.com signals an unexposed write route with a 404 on a path whose `GET` works. Don't re-test by minting another write token. Support may claim allocation works via public API (docs list `CreateAPublicIpv4Network…`) — it does not for our account; IP ordering stays portal/serverscom-side.
+Alias-IP allocation **and** removal are both available via API — full lifecycle, no portal needed: `POST /networks/public_ipv4` (`{"distribution_method":"route","mask":32}`) to allocate, `DELETE /networks/{netId}` to deallocate. Use the `/networks/public_ipv4` sub-resource, **not** the bare `/networks` (read-only list; POSTing there → `404 NOT_FOUND` — the wrong-path trap that long made allocation look portal-only). All our API tokens are Read & Write, so the 404 was never a scope issue.
+
+**`OPTIONS` is unreliable on nested `/networks/...` paths** — it under-reports methods (e.g. `/networks/{netId}` answers `OPTIONS, POST` yet GET and DELETE both work). Trust a live call over the `Allow` header for these sub-resources; the original "portal-only" conclusion came from believing OPTIONS on the wrong path.
 
 The "no PUT" finding drives `RequiresReplace` on every PTR schema attribute. If Servers.com later adds PATCH/PUT, drop `RequiresReplace` on `domain`/`priority`/`ttl` and add proper Update logic — `host_id` and `ip` stay ForceNew (PTR identity).
 

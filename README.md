@@ -13,6 +13,7 @@ The official provider (`serverscom/serverscom`, v0.2.2 at the time of writing) w
 | Resource | Purpose |
 |---|---|
 | `serverscomx_ptr_record` | Reverse DNS (PTR) record on a dedicated server. Wraps `POST/DELETE /hosts/dedicated_servers/{host_id}/ptr_records[/{id}]`. |
+| `serverscomx_public_ipv4` | Additional public IPv4 (alias) address on a dedicated server. Wraps `POST /hosts/dedicated_servers/{host_id}/networks/public_ipv4` + `DELETE .../networks/{id}`. |
 
 ## Using both providers in one root
 
