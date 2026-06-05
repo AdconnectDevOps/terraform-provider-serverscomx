@@ -79,6 +79,7 @@ Inherits from `terraform-provider-shodan`'s contributor guide. Key rules:
 - **Update must carry forward state ID** — even with `UseStateForUnknown`, defensively assign `plan.ID = state.ID` before any API mutation in Update. (For `serverscomx_ptr_record`, Update is a no-op — every attr is `RequiresReplace`.)
 - **Read self-heals on 404** — `resp.State.RemoveResource(ctx)` and return; Terraform recreates on next plan.
 - **Client method conventions** — empty-ID guard, rate-limited HTTP client (never `http.DefaultClient`), idempotent DELETE (treat 404 as success), wrap non-2xx as `fmt.Errorf("API request failed with status %d: %s", code, body)` so callers can string-match `status 404`.
+- **Computed+Default+RequiresReplace attrs must be read back from the API** — e.g. `mask` on `serverscomx_public_ipv4` is derived from the allocated CIDR in `apply`/`Read`. Left unset on import it diffs against its default and (being `RequiresReplace`) proposes a destroy+recreate on the first plan. Any `RequiresReplace` attr the API echoes must be populated on read so `terraform import` is a clean no-op.
 
 ## Adding a new resource
 
